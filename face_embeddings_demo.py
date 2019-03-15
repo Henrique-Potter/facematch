@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--img", type = str, required=True)
+parser.add_argument("--img", type=str, required=True)
 args = parser.parse_args()
 
 # some constants kept as default from facenet
@@ -44,9 +44,9 @@ def getFace(img):
                 bb[2] = np.minimum(det[2] + margin / 2, img_size[1])
                 bb[3] = np.minimum(det[3] + margin / 2, img_size[0])
                 cropped = img[bb[1]:bb[3], bb[0]:bb[2], :]
-                resized = cv2.resize(cropped, (input_image_size,input_image_size),interpolation=cv2.INTER_CUBIC)
+                resized = cv2.resize(cropped, (input_image_size, input_image_size), interpolation=cv2.INTER_CUBIC)
                 prewhitened = facenet.prewhiten(resized)
-                faces.append({'face':resized,'rect':[bb[0],bb[1],bb[2],bb[3]],'embedding':getEmbedding(prewhitened)})
+                faces.append({'face':resized,'rect':[bb[0],bb[1],bb[2],bb[3]], 'embedding':getEmbedding(prewhitened)})
     return faces
 
 def getEmbedding(resized):

@@ -652,7 +652,8 @@ def bbreg(boundingbox,reg):
     b4 = boundingbox[:,3]+reg[:,3]*h
     boundingbox[:,0:4] = np.transpose(np.vstack([b1, b2, b3, b4 ]))
     return boundingbox
- 
+
+
 def generateBoundingBox(imap, reg, scale, t):
     # use heatmap to generate bounding boxes
     stride=2
@@ -678,7 +679,8 @@ def generateBoundingBox(imap, reg, scale, t):
     q2 = np.fix((stride*bb+cellsize-1+1)/scale)
     boundingbox = np.hstack([q1, q2, np.expand_dims(score,1), reg])
     return boundingbox, reg
- 
+
+
 # function pick = nms(boxes,threshold,type)
 def nms(boxes, threshold, method):
     if boxes.size==0:
@@ -711,6 +713,7 @@ def nms(boxes, threshold, method):
         I = I[np.where(o<=threshold)]
     pick = pick[0:counter]
     return pick
+
 
 # function [dy edy dx edx y ey x ex tmpw tmph] = pad(total_boxes,w,h)
 def pad(total_boxes, w, h):
