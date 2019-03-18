@@ -56,7 +56,7 @@ def triplet_loss(anchor, positive, negative, alpha):
         pos_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, positive)), 1)
         neg_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, negative)), 1)
         
-        basic_loss = tf.add(tf.subtract(pos_dist,neg_dist), alpha)
+        basic_loss = tf.add(tf.subtract(pos_dist, neg_dist), alpha)
         loss = tf.reduce_mean(tf.maximum(basic_loss, 0.0), 0)
       
     return loss
@@ -177,6 +177,7 @@ def _add_loss_summaries(total_loss):
   
     return loss_averages_op
 
+
 def train(total_loss, global_step, optimizer, learning_rate, moving_average_decay, update_gradient_vars, log_histograms=True):
     # Generate moving averages of all losses and associated summaries.
     loss_averages_op = _add_loss_summaries(total_loss)
@@ -222,12 +223,14 @@ def train(total_loss, global_step, optimizer, learning_rate, moving_average_deca
   
     return train_op
 
+
 def prewhiten(x):
     mean = np.mean(x)
     std = np.std(x)
     std_adj = np.maximum(std, 1.0/np.sqrt(x.size))
     y = np.multiply(np.subtract(x, mean), 1/std_adj)
     return y  
+
 
 def crop(image, random_crop, image_size):
     if image.shape[1]>image_size:
@@ -240,18 +243,21 @@ def crop(image, random_crop, image_size):
             (h, v) = (0,0)
         image = image[(sz1-sz2+v):(sz1+sz2+v),(sz1-sz2+h):(sz1+sz2+h),:]
     return image
-  
+
+
 def flip(image, random_flip):
     if random_flip and np.random.choice([True, False]):
         image = np.fliplr(image)
     return image
+
 
 def to_rgb(img):
     w, h = img.shape
     ret = np.empty((w, h, 3), dtype=np.uint8)
     ret[:, :, 0] = ret[:, :, 1] = ret[:, :, 2] = img
     return ret
-  
+
+
 def load_data(image_paths, do_random_crop, do_random_flip, image_size, do_prewhiten=True):
     nrof_samples = len(image_paths)
     images = np.zeros((nrof_samples, image_size, image_size, 3))
@@ -266,6 +272,7 @@ def load_data(image_paths, do_random_crop, do_random_flip, image_size, do_prewhi
         images[i,:,:,:] = img
     return images
 
+
 def get_label_batch(label_data, batch_size, batch_index):
     nrof_examples = np.size(label_data, 0)
     j = batch_index*batch_size % nrof_examples
@@ -277,6 +284,7 @@ def get_label_batch(label_data, batch_size, batch_index):
         batch = np.vstack([x1,x2])
     batch_int = batch.astype(np.int64)
     return batch_int
+
 
 def get_batch(image_data, batch_size, batch_index):
     nrof_examples = np.size(image_data, 0)
@@ -290,6 +298,7 @@ def get_batch(image_data, batch_size, batch_index):
     batch_float = batch.astype(np.float32)
     return batch_float
 
+
 def get_triplet_batch(triplets, batch_index, batch_size):
     ax, px, nx = triplets
     a = get_batch(ax, int(batch_size/3), batch_index)
@@ -297,6 +306,7 @@ def get_triplet_batch(triplets, batch_index, batch_size):
     n = get_batch(nx, int(batch_size/3), batch_index)
     batch = np.vstack([a, p, n])
     return batch
+
 
 def get_learning_rate_from_file(filename, epoch):
     with open(filename, 'r') as f:
@@ -311,6 +321,7 @@ def get_learning_rate_from_file(filename, epoch):
                 else:
                     return learning_rate
 
+
 class ImageClass():
     "Stores the paths to images for a given class"
     def __init__(self, name, image_paths):
@@ -322,7 +333,8 @@ class ImageClass():
   
     def __len__(self):
         return len(self.image_paths)
-  
+
+
 def get_dataset(path, has_class_directories=True):
     dataset = []
     path_exp = os.path.expanduser(path)
@@ -337,13 +349,15 @@ def get_dataset(path, has_class_directories=True):
   
     return dataset
 
+
 def get_image_paths(facedir):
     image_paths = []
     if os.path.isdir(facedir):
         images = os.listdir(facedir)
         image_paths = [os.path.join(facedir,img) for img in images]
     return image_paths
-  
+
+
 def split_dataset(dataset, split_ratio, mode):
     if mode=='SPLIT_CLASSES':
         nrof_classes = len(dataset)
@@ -368,13 +382,14 @@ def split_dataset(dataset, split_ratio, mode):
         raise ValueError('Invalid train/test split mode "%s"' % mode)
     return train_set, test_set
 
+
 def load_model(model):
     # Check if the model is a model directory (containing a metagraph and a checkpoint file)
     #  or if it is a protobuf file with a frozen graph
     model_exp = os.path.expanduser(model)
     if (os.path.isfile(model_exp)):
         print('Model filename: %s' % model_exp)
-        with gfile.FastGFile(model_exp,'rb') as f:
+        with tf.gfile.GFile(model_exp, 'rb') as f:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
             tf.import_graph_def(graph_def, name='')
@@ -387,13 +402,14 @@ def load_model(model):
       
         saver = tf.train.import_meta_graph(os.path.join(model_exp, meta_file))
         saver.restore(tf.get_default_session(), os.path.join(model_exp, ckpt_file))
-    
+
+
 def get_model_filenames(model_dir):
     files = os.listdir(model_dir)
     meta_files = [s for s in files if s.endswith('.meta')]
-    if len(meta_files)==0:
+    if len(meta_files) == 0:
         raise ValueError('No meta file found in the model directory (%s)' % model_dir)
-    elif len(meta_files)>1:
+    elif len(meta_files) > 1:
         raise ValueError('There should not be more than one meta file in the model directory (%s)' % model_dir)
     meta_file = meta_files[0]
     meta_files = [s for s in files if '.ckpt' in s]
@@ -406,6 +422,7 @@ def get_model_filenames(model_dir):
                 max_step = step
                 ckpt_file = step_str.groups()[0]
     return meta_file, ckpt_file
+
 
 def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_folds=10):
     assert(embeddings1.shape[0] == embeddings2.shape[0])
@@ -437,6 +454,7 @@ def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_fold
     fpr = np.mean(fprs,0)
     return tpr, fpr, accuracy
 
+
 def calculate_accuracy(threshold, dist, actual_issame):
     predict_issame = np.less(dist, threshold)
     tp = np.sum(np.logical_and(predict_issame, actual_issame))
@@ -450,7 +468,6 @@ def calculate_accuracy(threshold, dist, actual_issame):
     return tpr, fpr, acc
 
 
-  
 def calculate_val(thresholds, embeddings1, embeddings2, actual_issame, far_target, nrof_folds=10):
     assert(embeddings1.shape[0] == embeddings2.shape[0])
     assert(embeddings1.shape[1] == embeddings2.shape[1])
